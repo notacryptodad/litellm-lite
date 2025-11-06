@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
     http = {
       source  = "hashicorp/http"
@@ -39,12 +39,12 @@ data "http" "current_ip" {
 locals {
   # CloudFront prefix list is available in all AWS regions
   use_cloudfront_prefix_list = true
-  
+
   # Fallback CIDR blocks if prefix list is not available
   cloudfront_fallback_cidrs = [
-    "0.0.0.0/0"  # This should be replaced with actual CloudFront IP ranges if needed
+    "0.0.0.0/0" # This should be replaced with actual CloudFront IP ranges if needed
   ]
-  
+
   # Calculate /16 CIDR from current IP or override
   current_ip      = var.override_current_ip != "" ? var.override_current_ip : chomp(data.http.current_ip.response_body)
   current_ip_cidr = "${join(".", slice(split(".", local.current_ip), 0, 2))}.0.0/16"
@@ -151,7 +151,7 @@ resource "aws_internet_gateway" "litellm_igw" {
 
 # Elastic IP for NAT Gateway
 resource "aws_eip" "litellm_nat_eip" {
-  domain = "vpc"
+  domain     = "vpc"
   depends_on = [aws_internet_gateway.litellm_igw]
 
   tags = {
@@ -263,7 +263,7 @@ resource "random_id" "bucket_suffix" {
 resource "aws_secretsmanager_secret" "litellm_master_key" {
   name        = "litellm-master-key"
   description = "LiteLLM Master Key for API authentication"
-  
+
   tags = {
     Name = "litellm-master-key"
   }
@@ -380,14 +380,14 @@ resource "aws_ecs_task_definition" "litellm_task" {
       name      = "litellm-container"
       image     = var.docker_image
       essential = true
-      
+
       command = [
         "--port",
         "8000",
         "--host",
         "0.0.0.0"
       ]
-      
+
       portMappings = [
         {
           containerPort = var.container_port
@@ -395,7 +395,7 @@ resource "aws_ecs_task_definition" "litellm_task" {
           protocol      = "tcp"
         }
       ]
-      
+
       environment = [
         {
           name  = "UI_USERNAME"
@@ -426,7 +426,7 @@ resource "aws_ecs_task_definition" "litellm_task" {
           value = aws_s3_object.litellm_config_file.etag
         }
       ]
-      
+
       secrets = [
         {
           name      = "LITELLM_MASTER_KEY"
@@ -437,7 +437,7 @@ resource "aws_ecs_task_definition" "litellm_task" {
           valueFrom = "${aws_secretsmanager_secret.litellm_master_key.arn}:LITELLM_MASTER_KEY::"
         }
       ]
-      
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -476,7 +476,7 @@ resource "aws_ecs_service" "litellm_service" {
   network_configuration {
     subnets          = [aws_subnet.litellm_ecs_private_subnet_1.id, aws_subnet.litellm_ecs_private_subnet_2.id]
     security_groups  = [aws_security_group.litellm_ecs_sg.id]
-    assign_public_ip = false  # No public IP needed in private subnet
+    assign_public_ip = false # No public IP needed in private subnet
   }
 
   load_balancer {
@@ -523,7 +523,7 @@ resource "aws_lb_target_group" "litellm_tg" {
   health_check {
     enabled             = true
     interval            = 60
-    path                = "/"  # Use root path for health check
+    path                = "/" # Use root path for health check
     port                = "traffic-port"
     healthy_threshold   = 3
     unhealthy_threshold = 3
@@ -576,9 +576,9 @@ resource "aws_cloudfront_cache_policy" "litellm_api_cache_policy" {
       header_behavior = "whitelist"
       headers {
         items = [
-          "Authorization", 
-          "Content-Type", 
-          "User-Agent", 
+          "Authorization",
+          "Content-Type",
+          "User-Agent",
           "Accept",
           "Origin",
           "Referer",
@@ -672,7 +672,7 @@ resource "aws_cloudfront_response_headers_policy" "litellm_security_headers" {
 resource "aws_wafv2_ip_set" "allowed_ips" {
   count    = var.enable_waf ? 1 : 0
   provider = aws.us_east_1
-  
+
   name               = "litellm-allowed-ips"
   scope              = "CLOUDFRONT"
   ip_address_version = "IPV4"
@@ -687,7 +687,7 @@ resource "aws_wafv2_ip_set" "allowed_ips" {
 resource "aws_wafv2_web_acl" "litellm_waf" {
   count    = var.enable_waf ? 1 : 0
   provider = aws.us_east_1
-  
+
   name  = "litellm-cloudfront-waf"
   scope = "CLOUDFRONT"
 
@@ -854,12 +854,12 @@ resource "aws_cloudfront_distribution" "litellm_distribution" {
 
   # Default cache behavior for API endpoints
   default_cache_behavior {
-    allowed_methods                = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods                 = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id               = "litellm-alb-origin"
-    compress                       = true
-    viewer_protocol_policy         = "redirect-to-https"
-    
+    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id       = "litellm-alb-origin"
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
     cache_policy_id            = aws_cloudfront_cache_policy.litellm_api_cache_policy.id
     origin_request_policy_id   = aws_cloudfront_origin_request_policy.litellm_origin_request_policy.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.litellm_security_headers.id
@@ -867,13 +867,13 @@ resource "aws_cloudfront_distribution" "litellm_distribution" {
 
   # Cache behavior for health check endpoint
   ordered_cache_behavior {
-    path_pattern               = "/health*"
-    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
-    cached_methods             = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id           = "litellm-alb-origin"
-    compress                   = true
-    viewer_protocol_policy     = "redirect-to-https"
-    
+    path_pattern           = "/health*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id       = "litellm-alb-origin"
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
     cache_policy_id            = aws_cloudfront_cache_policy.litellm_api_cache_policy.id
     origin_request_policy_id   = aws_cloudfront_origin_request_policy.litellm_origin_request_policy.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.litellm_security_headers.id
