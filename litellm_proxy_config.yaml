@@ -1,0 +1,108 @@
+model_list:
+  - model_name: amazon.nova-pro-v1
+    litellm_params:
+      model: bedrock/us.amazon.nova-pro-v1:0
+      aws_region_name: us-west-2
+      
+  - model_name: amazon.nova-lite-v1
+    litellm_params:
+      model: bedrock/us.amazon.nova-lite-v1:0
+      aws_region_name: us-west-2
+
+  - model_name: anthropic.claude-3-7-sonnet-20250219-v1
+    litellm_params:
+      model: bedrock/us.anthropic.claude-3-7-sonnet-20250219-v1:0
+      aws_region_name: us-west-2
+
+  - model_name: anthropic.claude-opus-4-1-20250805-v1
+    litellm_params:
+      model: bedrock/us.anthropic.claude-opus-4-20250514-v1:0
+      aws_region_name: us-west-2
+
+  - model_name: anthropic.claude-sonnet-4-5-20250929-v1
+    litellm_params:
+      model: bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0
+      aws_region_name: us-west-2 
+
+  - model_name: anthropic.claude-sonnet-4-5-20250929-v1-1M
+    litellm_params:
+      model: bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0
+      extra_headers:
+        anthropic-beta: "context-1m-2025-08-07"  # 👈 Enable 1M context
+      aws_region_name: us-west-2 
+
+
+  - model_name: anthropic.claude-haiku-4-5-20251001-v1
+    litellm_params:
+      model: bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0
+      aws_region_name: us-west-2
+
+  - model_name: claude-3-5-haiku-20241022
+    litellm_params:
+      model: bedrock/us.anthropic.claude-3-5-haiku-20241022-v1:0
+      aws_region_name: us-west-2
+  
+general_settings:
+  forward_client_headers_to_llm_api: true
+
+litellm_settings:
+  # 设置日志级别
+  #set_verbose: true
+  drop_params: true
+
+general_settings:
+  # 主密钥用于认证
+  master_key: os.environ/LITELLM_MASTER_KEY
+  # 数据库配置
+  #database_url: os.environ/DATABASE_URL
+  # 启用 UI
+  #ui: true
+  # 启用健康检查
+  health_check: true
+  # 设置 CORS
+  cors_origins: ["*"]
+
+# 用户管理和认证
+router_settings:
+  # 启用用户认证
+  enable_pre_call_checks: true
+  # 设置速率限制
+  rpm_limit: 1000
+  tpm_limit: 100000
+  # 启用日志记录
+  enable_request_logging: true
+
+# 安全设置
+security_settings:
+  # 启用 API 密钥验证
+  enforce_user_param: true
+  # 设置允许的 IP 范围
+  allowed_ips: []
+  # 启用请求验证
+  enable_request_validation: true
+
+# 成本跟踪
+cost_tracking:
+  enabled: true
+  # 设置预算限制
+  budget_limit: 1000.0
+  # 设置预算重置周期（月）
+  budget_duration: "1mo"
+
+# 负载均衡设置
+load_balancing:
+  # 启用负载均衡
+  enabled: true
+  # 设置负载均衡策略
+  strategy: "round_robin"
+  # 健康检查间隔
+  health_check_interval: 30
+
+# 日志设置
+logging:
+  # 日志级别
+  level: "INFO"
+  # 日志格式
+  format: "json"
+  # 启用访问日志
+  access_log: true
